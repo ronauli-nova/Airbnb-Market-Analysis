@@ -106,13 +106,18 @@ ALTER TABLE sales_reps ADD FOREIGN KEY (region_id) REFERENCES region;
 <p align="center">
  <kbd><img width="555" alt="image" src="https://github.com/user-attachments/assets/8ad4c979-4229-45d3-ab27-c2577a3a2d5d"> </kbd> <br>
  Gambar 1. Entity Relationship Diagram
-
-
+</p>
+<br>
 
 # STAGE 2: Data Analysis
-Monthly Hotel Booking Analysis Based on Hotel Type
-Impact Analysis of Stay Duration on Hotel Bookings Cancellation Rates
-Impact Analysis of Lead Time on Hotel Bookings Cancellation Rates
+### Sales performance
+### Targeted Marketing Strategies
+### Top-performing Paper Type
+### Seosonal Sales Trend
+### Customer Spending Behavior
+### Customer Loyalty
+### Effective Channels
+### Regional performance
 
 
 # STAGE 3: Summary and Recommendations
