@@ -1,4 +1,4 @@
-# Analyzing Sales Performance in Parch and Posey Company
+# Parch and Posey Business Analysis
 
 # STAGE 0: Problem Statement
 ## Introduction
