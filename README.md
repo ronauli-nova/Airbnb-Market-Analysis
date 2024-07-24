@@ -18,8 +18,10 @@ Parch and Posey is a company specializing in the manufacturing and distribution 
 - Customer Segmentation
 - Geographic Distribution
 
-3. Marketing
+3. Marketing Analysis
 - Effective channels
+- Conversion Rates
+- Customer Engagement
 
 ## Data Explaination
 The data was extracted from Parch and Posey database where it was stored in 5 tables which are:
@@ -117,7 +119,8 @@ ALTER TABLE sales_reps ADD FOREIGN KEY (region_id) REFERENCES region;
 <br>
 
 # STAGE 2: Data Analysis
-### Sales performance
+## Sales performance
+To effectively monitor and improve sales performance, businesses rely on several key metrics. Understanding these metrics in business terms provides valuable insights for strategic decision-making and overall growth.
 <details>
   <summary>Query to Count Rows in Accounts Table</summary>
 	
@@ -271,36 +274,272 @@ GROUP BY
 
 **Monthly Revenue trend :** <br>
 <p align="center">
-<kbd>
+<kbd><img width="678" alt="image" src="https://github.com/user-attachments/assets/e5ae0f3a-0224-4666-b804-4a6126576a21">
 </kbd>
 </p>
 
 **Monthly Product Sold trend :** <br>
 <p align="center">
-<kbd>
+<kbd><img width="679" alt="image" src="https://github.com/user-attachments/assets/d97855fe-e78e-4f37-ba74-27ede9a9dbd0">
 </kbd>
 </p>
 
 **Monthly Purchase trend :** <br>
 <p align="center">
-<kbd>
+<kbd><img width="679" alt="image" src="https://github.com/user-attachments/assets/71aac670-d262-47ee-92a8-099c0f3e2f6f">
 </kbd>
 </p>
 
 **Total Purchase each Region :** <br>
 <p align="center">
-<kbd><img width="233" alt="image" src="https://github.com/user-attachments/assets/7f15f230-3653-4bf5-9bc5-be145164cdee"></kbd>
+<kbd><img width="251" alt="image" src="https://github.com/user-attachments/assets/d5f9823a-893c-487e-9301-4083bcd8bc58">
+</kbd>
 </p>
 
+## Customer Analysis
+<details>
+  <summary>Query to Count Rows in Accounts Table</summary>
+
+ ```sql
+-- Customer Lifetime Value
+WITH sub1 AS (
+    --- Average purchase value
+    SELECT
+        SUM(total_amt_usd) * 1.0 / COUNT(id) AS avg_purchase_value
+    FROM
+        orders
+    WHERE
+        occurred_at BETWEEN '2016-01-02' AND '2017-01-02'
+),
+sub2 AS (
+    --- Average Frequency Rate
+    SELECT
+        COUNT(id) * 1.0 / COUNT(DISTINCT account_id) AS avg_freq_rate
+    FROM 
+        orders
+    WHERE
+        occurred_at BETWEEN '2016-01-02' AND '2017-01-02'
+),
+cust_value AS (
+    SELECT
+        ROUND(sub1.avg_purchase_value * sub2.avg_freq_rate, 2) AS customer_value
+    FROM
+        sub1, sub2
+),
+lifespan AS (
+    --- Number of years each customer has been with you
+    SELECT
+        account_id,
+        EXTRACT(YEAR FROM AGE(MAX(occurred_at), MIN(occurred_at))) + 1 AS years_as_customer
+    FROM
+        orders
+    GROUP BY
+        account_id
+),
+avg_cust_lifespan AS (
+    --- Average Customer Lifespan
+    SELECT
+        ROUND(AVG(years_as_customer), 2) AS avg_years
+    FROM
+        lifespan
+)
+SELECT
+    customer_value,
+    avg_years,
+    cust_value.customer_value * avg_cust_lifespan.avg_years AS customer_lifetime_value
+FROM
+    cust_value,
+    avg_cust_lifespan;
 
 
-- Revenue & Sales
-- Top-performing Sales Representatives
-- Top-performing Paper Type
-- Monthly Purchase Trend
-- Regional performance
+-- Churn rate
+WITH customers_at_start AS (
+    SELECT DISTINCT account_id
+    FROM orders
+    WHERE occurred_at < '2016-01-02'
+),
+customers_during_period AS (
+    SELECT DISTINCT account_id
+    FROM orders
+    WHERE occurred_at BETWEEN '2016-01-02' AND '2017-01-02'
+),
+churned_customers AS (
+    SELECT account_id
+    FROM customers_at_start
+    WHERE account_id NOT IN (SELECT account_id FROM customers_during_period)
+)
+SELECT
+    (SELECT COUNT(*) FROM churned_customers) AS churned_cust,
+    (SELECT COUNT(*) FROM customers_at_start) AS total_customers_at_start,
+    ROUND((SELECT COUNT(*) FROM churned_customers)::decimal / (SELECT COUNT(*) FROM customers_at_start) * 100, 2) 
+	AS churn_rate;
 
+-- Customer segmentation
+--- Based on spending
+SELECT account_id, SUM(total_amt_usd) AS total_spent,
+           CASE
+               WHEN SUM(total_amt_usd) > 50000 THEN 'High Value'
+               WHEN SUM(total_amt_usd) BETWEEN 10000 AND 50000 THEN 'Medium Value'
+               ELSE 'Low Value'
+           END AS customer_segment
+    FROM orders
+    GROUP BY account_id
+    ORDER BY total_spent DESC;
 
+---- distribution
+WITH segment AS (
+SELECT account_id, SUM(total_amt_usd) AS total_spent,
+           CASE
+               WHEN SUM(total_amt_usd) > 50000 THEN 'High Value'
+               WHEN SUM(total_amt_usd) BETWEEN 10000 AND 50000 THEN 'Medium Value'
+               ELSE 'Low Value'
+           END AS customer_segment
+    FROM orders
+    GROUP BY account_id
+    ORDER BY total_spent DESC
+	)
+SELECT customer_segment,
+		COUNT(*) AS total_account
+FROM segment
+GROUP BY 1
+ORDER BY 2;
+
+--- Based on region
+SELECT a.id, a.name, r.name AS region
+FROM accounts a
+JOIN sales_reps s ON a.sales_rep_id = s.id
+JOIN region r ON s.region_id = r.id;
+
+----distribution
+SELECT r.name AS region,
+		COUNT(a.id) AS total_customers
+FROM accounts a
+JOIN sales_reps s ON a.sales_rep_id = s.id
+JOIN region r ON s.region_id = r.id
+GROUP BY 1
+ORDER BY total_customers DESC;
+```
+</details>
+
+**Customer Lifetime Value (CLTV) :** <br>
+<p align="center">
+<kbd><img width="500" alt="image" src="https://github.com/user-attachments/assets/1692ebf1-9191-4713-a464-0ce24bc99ece"></kbd>
+</p>
+
+<p align="center">
+<kbd><img width="486" alt="image" src="https://github.com/user-attachments/assets/6530046d-4f2e-46a6-98d1-709022322397"></kbd>
+</p>
+
+**Churn Rate :** <br>
+Churn rate : persentase dari total customer sebelum periode, namun tidak melakukan order kembali selama periode.
+		periode : 1 tahun terakhir (2016-01-02 sampai 2017-01-02)
+<p align="center">
+<kbd><img width="477" alt="image" src="https://github.com/user-attachments/assets/9f28ed82-eff1-493b-b138-8f38f4f2985c"></kbd>
+</p>
+
+**Customer Segmentation :** <br>
+1. Based on spending
+<p align="center">
+<kbd><img width="432" alt="image" src="https://github.com/user-attachments/assets/b43b7d46-f4d6-4f54-b987-a73783d2ba94"></kbd>
+</p>
+
+distribution
+<p align="left">
+<kbd><img width="342" alt="image" src="https://github.com/user-attachments/assets/2ca5226b-616a-4817-a467-eb78c5e9997d"></kbd>
+</p>
+
+2. Based on region
+<p align="center">
+<kbd><img width="504" alt="image" src="https://github.com/user-attachments/assets/a77cc353-222a-4715-ba7a-4070071f4438"></kbd>
+</p>
+
+distribution
+<p align="left">
+<kbd><img width="279" alt="image" src="https://github.com/user-attachments/assets/81f1c4f4-389b-4e14-a6fd-af8dcdb6f5cf"></kbd>
+</p>
+
+**Geographic Distribution :** <br>
+<p align="center">
+<kbd><img width="671" alt="image" src="https://github.com/user-attachments/assets/73148a57-f8d1-43a3-9d8a-68fa96202dc9"></kbd>
+</p>
+
+## Marketing Analysis
+<details>
+  <summary>Query to Count Rows in Accounts Table</summary>
+
+ ```sql
+-- Channel Effectiveness
+--- Revenue Generation:
+SELECT channel, 
+	TO_CHAR(SUM(total_amt_usd), 'FM$999,999,999,00') AS total_revenue
+FROM web_events we
+JOIN orders o ON we.account_id = o.account_id
+GROUP BY 1
+ORDER BY 2 DESC;
+
+--- Customer Acquisition
+SELECT channel,
+		COUNT(account_id)  AS total_cust
+FROM web_events
+GROUP BY 1
+ORDER BY 2 DESC;
+	
+-- Conversion Rates
+WITH sub AS (
+    SELECT channel, 
+        COUNT(DISTINCT o.account_id) AS cust_action,
+        COUNT(DISTINCT we.account_id) AS listed_cust 
+    FROM web_events we
+    LEFT JOIN orders o ON we.account_id = o.account_id
+    GROUP BY 1
+)
+SELECT *,
+    (CAST(cust_action AS DECIMAL) / CAST(listed_cust AS DECIMAL)) * 100 AS conversion_rate
+FROM sub;
+
+--- Customer Engagement
+SELECT channel, ROUND(AVG(events),2) AS average_events
+FROM (
+    SELECT 
+		DATE_TRUNC('day', occurred_at) AS day, 
+		channel, 
+		COUNT(*) AS events
+    FROM web_events
+    GROUP BY day, channel
+) sub
+GROUP BY channel
+ORDER BY average_events DESC;
+```
+</details>
+
+**Effective channels :**
+- Revenue Generation
+  Identify which channels bring in the most sales. For example, if email marketing generates $100,000 in sales while social media generates $50,000, email marketing is more effective.
+<p align="center">
+<kbd>
+<img width="268" alt="image" src="https://github.com/user-attachments/assets/bf6bccee-1bce-4eb2-bcf3-2842e8ed0c31"></kbd>
+</p>
+
+- Customer Acquisition
+  Determine how many new customers each channel brings in. Channels that attract more customers are generally considered more effective.
+
+<p align="center">
+<kbd>
+<img width="247" alt="image" src="https://github.com/user-attachments/assets/fab43cee-d4a5-4765-8209-c1807d1e6315"></kbd>
+</p>
+
+**Conversion Rates :**
+  Conversion Rate is the percentage of visitors or leads that take a desired action, such as making a purchase, signing up for a newsletter, or filling out a contact form. It’s a critical metric for assessing the effectiveness of marketing efforts.
+<p align="center">
+<kbd>
+<img width="563" alt="image" src="https://github.com/user-attachments/assets/8fd0a389-653e-4f3d-859a-54016ecba238"></kbd>
+</p>
+
+**Customer Engagement :**
+  Customer Engagement measures the level of interaction and involvement customers have with a brand through various channels. It includes metrics like time spent on the website, click-through rates, social media interactions, and repeat visits.
+<p align="center">
+<kbd><img width="297" alt="image" src="https://github.com/user-attachments/assets/a0666f30-571a-46fd-bec5-22e376ff7c0d"></kbd>
+</p>
 
 
 # STAGE 3: Summary and Recommendations
