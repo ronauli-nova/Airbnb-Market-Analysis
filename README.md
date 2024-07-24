@@ -125,54 +125,7 @@ To effectively monitor and improve sales performance, businesses rely on several
   <summary>Query to Count Rows in Accounts Table</summary>
 	
 ```sql
--- Total Revenue & Product Sold by Region
-SELECT r.name AS region, 
-	TO_CHAR(SUM(o.total_amt_usd), 'FM$999,999,999.00') AS total_revenue,
-	TO_CHAR(SUM(o.total), 'FM999,999,999')  AS total_product_sold
-FROM orders o
-JOIN accounts a ON o.account_id = a.id
-JOIN sales_reps s ON s.id = a.sales_rep_id
-JOIN region r ON r.id = s.region_id
-GROUP BY 1
-ORDER BY 2 DESC;
-
--- Top 10 Sales Representatives
-SELECT s.name AS sales_rep_name,
-	TO_CHAR(SUM(o.total_amt_usd), 'FM$999,999,999.00') AS total_revenue, 
-	TO_CHAR(SUM(o.total), 'FM999,999,999') AS total_product_sold
-FROM orders o
-JOIN accounts a ON o.account_id = a.id
-JOIN sales_reps s ON s.id = a.sales_rep_id
-GROUP BY 1
-ORDER BY 2 DESC
-LIMIT 10;
-
--- Most sold paper type
-WITH paper_sales_per_region AS (
-    SELECT
-        r.name AS region_name,
-        SUM(o.standard_qty) AS total_standard_qty,
-        SUM(o.gloss_qty) AS total_gloss_qty,
-        SUM(o.poster_qty) AS total_poster_qty
-    FROM
-        orders o
-        JOIN accounts a ON a.id = o.account_id
-		JOIN sales_reps s ON a.sales_rep_id = s.id
-        JOIN region r ON s.region_id = r.id
-    GROUP BY
-        r.name
-)
-SELECT
-    region_name,
-    CASE 
-        WHEN total_standard_qty > total_gloss_qty AND total_standard_qty > total_poster_qty THEN 'Standard'
-        WHEN total_gloss_qty > total_standard_qty AND total_gloss_qty > total_poster_qty THEN 'Gloss'
-        WHEN total_poster_qty > total_standard_qty AND total_poster_qty > total_gloss_qty THEN 'Poster'
-    END AS most_sold_paper_type
-FROM
-    paper_sales_per_region;
-
--- Total revenue of paper type each region
+-- Total Revenue
 SELECT
     CASE
         WHEN GROUPING(r.name) = 1 THEN 'Total'
@@ -180,7 +133,8 @@ SELECT
     END AS region_name,
     TO_CHAR(SUM(o.standard_amt_usd), 'FM$999,999,999.00') AS total_standard_rev,
     TO_CHAR(SUM(o.gloss_amt_usd), 'FM$999,999,999.00') AS total_gloss_rev,
-    TO_CHAR(SUM(o.poster_amt_usd), 'FM$999,999,999.00') AS total_poster_rev
+    TO_CHAR(SUM(o.poster_amt_usd), 'FM$999,999,999.00') AS total_poster_rev,
+    TO_CHAR(SUM(o.standard_amt_usd) + SUM(o.gloss_amt_usd) + SUM(o.poster_amt_usd), 'FM$999,999,999.00') AS total_revenue
 FROM
     orders o
     JOIN accounts a ON a.id = o.account_id
@@ -189,15 +143,17 @@ FROM
 GROUP BY
     ROLLUP(r.name);
 
--- Total product sold based on paper type each region
+-- Total Product Sold
  SELECT
-	CASE 
-		WHEN GROUPING (r.name) = 1 THEN 'Total'
-		ELSE r.name
+	 CASE 
+	 	 WHEN GROUPING (r.name) = 1 THEN 'Total'
+	 	 ELSE r.name
 	 	END AS region_name,
         TO_CHAR(SUM(o.standard_qty), 'FM999,999,999') AS total_standard_qty,
         TO_CHAR(SUM(o.gloss_qty), 'FM999,999,999') AS total_gloss_qty,
-        TO_CHAR(SUM(o.poster_qty), 'FM999,999,999') AS total_poster_qty
+        TO_CHAR(SUM(o.poster_qty), 'FM999,999,999') AS total_poster_qty,
+	 	TO_CHAR(SUM(o.standard_qty) + SUM(o.gloss_qty) + SUM(o.poster_qty), 
+	 'FM999,999,999') AS total_product_sold
     FROM
         orders o
         JOIN accounts a ON a.id = o.account_id
@@ -205,6 +161,24 @@ GROUP BY
         JOIN region r ON s.region_id = r.id
     GROUP BY
         ROLLUP(r.name);
+
+-- Total Purchase
+SELECT
+    CASE
+        WHEN GROUPING(r.name) = 1 THEN 'Total'
+        ELSE r.name
+    END AS region_name,
+    TO_CHAR(COUNT(o.id), 'FM999,999,999') AS total_order,
+    TO_CHAR(COUNT(CASE WHEN o.standard_amt_usd > o.gloss_amt_usd AND o.standard_amt_usd > o.poster_amt_usd THEN o.id END), 'FM999,999,999') AS most_order_standard,
+    TO_CHAR(COUNT(CASE WHEN o.gloss_amt_usd > o.standard_amt_usd AND o.gloss_amt_usd > o.poster_amt_usd THEN o.id END), 'FM999,999,999') AS most_order_gloss,
+    TO_CHAR(COUNT(CASE WHEN o.poster_amt_usd > o.standard_amt_usd AND o.poster_amt_usd > o.gloss_amt_usd THEN o.id END), 'FM999,999,999') AS most_order_poster
+FROM
+    orders o
+    JOIN accounts a ON a.id = o.account_id
+    JOIN sales_reps s ON a.sales_rep_id = s.id
+    JOIN region r ON s.region_id = r.id
+GROUP BY
+    ROLLUP(r.name);
 
 -- Monthly Revenue trend
 SELECT
@@ -217,7 +191,7 @@ ORDER BY 2 ASC;
 
 -- Monthly Product Sold trend
 SELECT
-	SUM(total) AS total_revenue,
+	SUM(total) AS total_order,
 	DATE_TRUNC('month', occurred_at) AS date
 FROM 
 	orders
@@ -226,75 +200,85 @@ ORDER BY 2 ASC;
 
 -- Monthly Purchase trend
 SELECT
-	COUNT(id) AS total_order,
+	COUNT(id) AS total_purchase,
 	DATE_TRUNC('month', occurred_at) AS date
 FROM 
 	orders
 GROUP BY 2
-ORDER BY 2;
+ORDER BY 2 ASC;
 
--- Total order per region
-SELECT
-    CASE
-        WHEN GROUPING(r.name) = 1 THEN 'Total'
-        ELSE r.name
-    END AS region_name,
-    TO_CHAR(COUNT(o.id), 'FM999,999,999') AS total_order
-FROM
-    orders o
-    JOIN accounts a ON a.id = o.account_id
-    JOIN sales_reps s ON a.sales_rep_id = s.id
-    JOIN region r ON s.region_id = r.id
-GROUP BY
-    ROLLUP(r.name);
+-- Top 10 Sales Representatives
+SELECT s.name AS sales_rep_name,
+	TO_CHAR(SUM(o.total_amt_usd), 'FM$999,999,999.00') AS total_revenue, 
+	TO_CHAR(SUM(o.total), 'FM999,999,999') AS total_product_sold,
+	COUNT(o.id) AS total_purchase
+FROM orders o
+JOIN accounts a ON o.account_id = a.id
+JOIN sales_reps s ON s.id = a.sales_rep_id
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;
 ```
 </details>
 
-**Total Revenue & Product Sold by Region :** <br>
-<p align="center">
-<kbd><img width="391" alt="image" src="https://github.com/user-attachments/assets/2a66631f-d897-4674-bb9c-949e80a20aa2">
-</kbd>
-</p>
-<br>
 
-**Top 10 Performing Sales Representatives :** <br>
+**Total Revenue :** <br>
 <p align="center">
-<kbd><img width="457" alt="image" src="https://github.com/user-attachments/assets/3025f5bf-85f6-48cb-9e0a-19b4a11f05b2"></kbd>
+<kbd><img width="612" alt="image" src="https://github.com/user-attachments/assets/9982130e-db1c-4092-a49f-ad61fe588d48"></kbd>
 </p>
 
-**Total Revenue based on Paper Type each Region :** <br>
+- Revenue by region <br>
+The columns total_standard_rev, total_gloss_rev, and total_poster_rev show how much revenue was generated from each paper type in each region.
+The total_revenue column sums up the revenue from all paper types for each region. The highest sales by region and paper type were on **standard** type in the **Northeast, USA** in total $3,227,886.29. The lowest sales by region and paper type were on **poster** type in the **Midwest, USA** in total $677,021.24.
+
+- Grand Total <br>
+The row labeled 'Total' provides a summary of revenue across all paper type.
+This row shows the combined revenue from all region and the overall total revenue.
+
+- Revenue Distribution <br>
+The smallest revenue among all paper type is the **poster** type with $5,876,005.52. Among all regions, Midwest is the region with the smallest revenue with $3,013,486.51
+
+**Total Product Sold :** <br>
 <p align="center">
-<kbd><img width="493" alt="image" src="https://github.com/user-attachments/assets/86b5d553-8a72-4171-bd54-f6cdccaf89d5"></kbd>
+<kbd><img width="641" alt="image" src="https://github.com/user-attachments/assets/8bc33a1f-e531-44a4-859c-c974d8e36f95"></kbd>
 </p>
 
-**Total Product Sold based on Paper Type each Region :** <br>
+In line with revenue, the largest number of products sold were of the type **standard** in the **Northeast, USA** with amount 646,871 and the smallest number of products sold are of type **poster**  in the **Midwest, USA** with amaount 83,377.
+
+**Total Purchase :** <br>
 <p align="center">
-<kbd><img width="497" alt="image" src="https://github.com/user-attachments/assets/d98f8312-fe58-480d-bd56-32e8c4c5faa9"></kbd>
+<kbd><img width="676" alt="image" src="https://github.com/user-attachments/assets/e20f43f6-5d9b-42f8-b65a-3660cc10005d"></kbd>
 </p>
+
+The total_order column shows the total number of orders in each region. The total_orders column shows the total number of orders in each region, while the other columns show the number of orders with each type of paper that is ordered the most. Northeast is the region with largest amount of order and Midwest is the region smallest amount of order. The total_order column does not always show the sum of all columns in one row because there may be a same quantity of paper type in an order.
 
 **Monthly Revenue trend :** <br>
 <p align="center">
-<kbd><img width="678" alt="image" src="https://github.com/user-attachments/assets/e5ae0f3a-0224-4666-b804-4a6126576a21">
+<kbd><img width="679" alt="image" src="https://github.com/user-attachments/assets/97ca76f2-1c2c-4de4-ae32-64de2074375d">
 </kbd>
 </p>
 
 **Monthly Product Sold trend :** <br>
 <p align="center">
-<kbd><img width="679" alt="image" src="https://github.com/user-attachments/assets/d97855fe-e78e-4f37-ba74-27ede9a9dbd0">
+<kbd><img width="678" alt="image" src="https://github.com/user-attachments/assets/34b999f7-ca65-4aba-b380-cf08b71ef979">
 </kbd>
 </p>
 
 **Monthly Purchase trend :** <br>
 <p align="center">
-<kbd><img width="679" alt="image" src="https://github.com/user-attachments/assets/71aac670-d262-47ee-92a8-099c0f3e2f6f">
+<kbd><img width="680" alt="image" src="https://github.com/user-attachments/assets/84e16fe0-2f1d-41f6-a650-be69e13d2378">
 </kbd>
 </p>
 
-**Total Purchase each Region :** <br>
+The graph shows that revenue, products sold, and purchases have increased from December 2013 to December 2016.
+
+**Top 10 Performing Sales Representatives :** <br>
 <p align="center">
-<kbd><img width="251" alt="image" src="https://github.com/user-attachments/assets/d5f9823a-893c-487e-9301-4083bcd8bc58">
+<kbd><img width="595" alt="image" src="https://github.com/user-attachments/assets/167c3678-7223-4748-b377-66353d821097">
 </kbd>
 </p>
+
+Vernita Plump managed to generate the most revenue among all representatives with $934,212.93 revenue, 150,467 products sold, and 299 purchases.
 
 ## Customer Analysis
 <details>
@@ -344,13 +328,12 @@ avg_cust_lifespan AS (
         lifespan
 )
 SELECT
-    customer_value,
+    TO_CHAR(customer_value,'FM$999,999,999.00') AS customer_value,
     avg_years,
-    cust_value.customer_value * avg_cust_lifespan.avg_years AS customer_lifetime_value
+    TO_CHAR(cust_value.customer_value * avg_cust_lifespan.avg_years, 'FM$999,999,999.00') AS customer_lifetime_value
 FROM
     cust_value,
     avg_cust_lifespan;
-
 
 -- Churn rate
 WITH customers_at_start AS (
@@ -427,15 +410,18 @@ ORDER BY total_customers DESC;
 </p>
 
 <p align="center">
-<kbd><img width="486" alt="image" src="https://github.com/user-attachments/assets/6530046d-4f2e-46a6-98d1-709022322397"></kbd>
+<kbd><img width="487" alt="image" src="https://github.com/user-attachments/assets/16763f95-5eb1-4708-b308-32ae10efdbb6">
+</kbd>
 </p>
 
+Average CLV represent average revenue gained from customer times average number of years of someone being a customer. It shows that average CLV of Parch and Posey is $61,735.64.
+
 **Churn Rate :** <br>
-Churn rate : persentase dari total customer sebelum periode, namun tidak melakukan order kembali selama periode.
-		periode : 1 tahun terakhir (2016-01-02 sampai 2017-01-02)
 <p align="center">
 <kbd><img width="477" alt="image" src="https://github.com/user-attachments/assets/9f28ed82-eff1-493b-b138-8f38f4f2985c"></kbd>
 </p>
+
+Churn rate is percentage of total customers before the period, but did not make any order during the period. It shows that churn rate of of Parch and Posey is 19.31%
 
 **Customer Segmentation :** <br>
 1. Based on spending
@@ -448,6 +434,8 @@ distribution
 <kbd><img width="342" alt="image" src="https://github.com/user-attachments/assets/2ca5226b-616a-4817-a467-eb78c5e9997d"></kbd>
 </p>
 
+This segmentation is based on customers who spend more than $50,000 (High Value), between $10,000 and $50,000 (Medium Value) and under $10,000 (Low Value). Distribution table shows that there are 147 high value customers, 147 medium value customers, and 56 low value customers.
+
 2. Based on region
 <p align="center">
 <kbd><img width="504" alt="image" src="https://github.com/user-attachments/assets/a77cc353-222a-4715-ba7a-4070071f4438"></kbd>
@@ -457,6 +445,8 @@ distribution
 <p align="left">
 <kbd><img width="279" alt="image" src="https://github.com/user-attachments/assets/81f1c4f4-389b-4e14-a6fd-af8dcdb6f5cf"></kbd>
 </p>
+
+Distribution table shows that there are 106 customers from Northeast, 101 customers from West, 96 customers from Southeast, and 48 customers from Midwest.
 
 **Geographic Distribution :** <br>
 <p align="center">
@@ -494,7 +484,7 @@ WITH sub AS (
     GROUP BY 1
 )
 SELECT *,
-    (CAST(cust_action AS DECIMAL) / CAST(listed_cust AS DECIMAL)) * 100 AS conversion_rate
+    TO_CHAR((CAST(cust_action AS DECIMAL) / CAST(listed_cust AS DECIMAL)) * 100, 'FM99,999%') AS conversion_rate
 FROM sub;
 
 --- Customer Engagement
@@ -514,32 +504,35 @@ ORDER BY average_events DESC;
 
 **Effective channels :**
 - Revenue Generation
-  Identify which channels bring in the most sales. For example, if email marketing generates $100,000 in sales while social media generates $50,000, email marketing is more effective.
 <p align="center">
-<kbd>
-<img width="268" alt="image" src="https://github.com/user-attachments/assets/bf6bccee-1bce-4eb2-bcf3-2842e8ed0c31"></kbd>
+<kbd><img width="268" alt="image" src="https://github.com/user-attachments/assets/bf6bccee-1bce-4eb2-bcf3-2842e8ed0c31"></kbd>
 </p>
+
+The result identify which channels bring in the most sales. **Direct** channel is the most effective channel to gain customer because The Marketing team successfully managed to earn the most revenue through this channel.
 
 - Customer Acquisition
-  Determine how many new customers each channel brings in. Channels that attract more customers are generally considered more effective.
-
 <p align="center">
-<kbd>
-<img width="247" alt="image" src="https://github.com/user-attachments/assets/fab43cee-d4a5-4765-8209-c1807d1e6315"></kbd>
+<kbd><img width="247" alt="image" src="https://github.com/user-attachments/assets/fab43cee-d4a5-4765-8209-c1807d1e6315"></kbd>
 </p>
+
+This determines how many new customers each channel brings in. The table shows that customers come mostly from **direct** channel.
+
 
 **Conversion Rates :**
-  Conversion Rate is the percentage of visitors or leads that take a desired action, such as making a purchase, signing up for a newsletter, or filling out a contact form. It’s a critical metric for assessing the effectiveness of marketing efforts.
 <p align="center">
-<kbd>
-<img width="563" alt="image" src="https://github.com/user-attachments/assets/8fd0a389-653e-4f3d-859a-54016ecba238"></kbd>
+<kbd><img width="505" alt="image" src="https://github.com/user-attachments/assets/e168c8fc-ff15-41cb-af14-30efa5f3e431">
+</kbd>
 </p>
+
+Conversion Rate is the percentage of visitors or leads that take a desired action, such as making a purchase, signing up for a newsletter, or filling out a contact form. The table shows percentage of customers that make order in the company based on channel. This indicates that all registered customers have placed an order.
 
 **Customer Engagement :**
   Customer Engagement measures the level of interaction and involvement customers have with a brand through various channels. It includes metrics like time spent on the website, click-through rates, social media interactions, and repeat visits.
 <p align="center">
 <kbd><img width="297" alt="image" src="https://github.com/user-attachments/assets/a0666f30-571a-46fd-bec5-22e376ff7c0d"></kbd>
 </p>
+
+
 
 
 # STAGE 3: Summary and Recommendations
