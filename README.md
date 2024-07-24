@@ -2,7 +2,7 @@
 
 # STAGE 0: Problem Statement
 ## Introduction
-Parch and Posey is a company specializing in the manufacturing and distribution of three distinct paper varieties: Standard Paper, Gloss Paper, and Poster Paper. The organization consists of 50 Sales Representatives, each strategically positioned across four key regions within the United States, namely the Northwest, Southeast, West, and Midwest.
+Parch and Posey is a company that specializes in the manufacture and distribution of three different types of paper: Standard Paper, Gloss Paper, and Poster Paper. The organization consists of 50 Sales Representatives, each of which is strategically positioned in four major regions in the United States, namely the Northwest, Southeast, West, and Midwest. t, Southeast, West, and Midwest.
 
 ## Objective
 1. Sales performance
@@ -37,7 +37,7 @@ The Parch and Posey dataset consists of 6912 data from December 2013 to January 
 
 ## Create Database and ERD 
 <details>
-  <summary>Query to Count Rows in Accounts Table</summary>
+  <summary>Click to view query</summary>
 
   ```sql
 -- 1) Create a database by right-clicking Databases > Create > Database.. named "project"
@@ -122,7 +122,7 @@ ALTER TABLE sales_reps ADD FOREIGN KEY (region_id) REFERENCES region;
 ## Sales Performance
 To effectively monitor and improve sales performance, businesses rely on several key metrics. Understanding these metrics in business terms provides valuable insights for strategic decision-making and overall growth.
 <details>
-  <summary>Query to Count Rows in Accounts Table</summary>
+  <summary>Click to view query</summary>
 	
 ```sql
 -- Total Revenue
@@ -282,7 +282,7 @@ Vernita Plump managed to generate the most revenue among all representatives wit
 
 ## Customer Analysis
 <details>
-  <summary>Query to Count Rows in Accounts Table</summary>
+  <summary>Click to view query</summary>
 
  ```sql
 -- Customer Lifetime Value
@@ -421,7 +421,7 @@ Average CLV represent average revenue gained from customer times average number 
 <kbd><img width="477" alt="image" src="https://github.com/user-attachments/assets/9f28ed82-eff1-493b-b138-8f38f4f2985c"></kbd>
 </p>
 
-Churn rate is percentage of total customers before the period, but did not make any order during the period. It shows that churn rate of of Parch and Posey is 19.31%
+Churn rate is percentage of total customers before the period, but did not make any order during the period. Churn rate of Parch and Posay during the period Jan 2016 to Jan 2017 is 19.31%
 
 **Customer Segmentation :** <br>
 1. Based on spending
@@ -517,7 +517,6 @@ The result identify which channels bring in the most sales. **Direct** channel i
 
 This determines how many new customers each channel brings in. The table shows that customers come mostly from **direct** channel.
 
-
 **Conversion Rates :**
 <p align="center">
 <kbd><img width="505" alt="image" src="https://github.com/user-attachments/assets/e168c8fc-ff15-41cb-af14-30efa5f3e431">
@@ -534,8 +533,10 @@ Conversion Rate is the percentage of visitors or leads that take a desired actio
 Customer Engagement measures the level of interaction and involvement customers have with a brand through various channels. It includes metrics like time spent on the website, click-through rates, social media interactions, and repeat visits. Due to data limitations in this case, the level of interaction calculated is only based on the total purchase. It shows **direct** channel gain most customer engagement among all channels.
 
 
-# STAGE 3: Summary and Recommendations
+# STAGE 3: Summary
 
-
+- In terms of sales performance, the amount of revenue, products sold, and purchases from Parch and Posay has increased from month to month for 3 years, which can be concluded that the **Northeast** is the region with the largest contribution, while based on paper type, **Standard** type is the best-selling paper type. This result is inseparable from the success of sales representatives who have successfully gained customers, where in this period **Vernita Plump** is the most outstanding representative among other representatives.
+- The average Customer Lifetime Value (CLV) for Parch and Posey stands at $61,735.64, calculated by multiplying the average revenue per customer by the average duration of customer retention. The company experiences a churn rate of 19.31%, indicating the percentage of customers who did not place an order during the evaluated period. Customer segmentation based on spending categorizes 147 customers as high value (over $50,000), 147 as medium value (between $10,000 and $50,000), and 56 as low value (under $10,000). Geographically, the customer distribution includes 106 from the Northeast, 101 from the West, 96 from the Southeast, and 48 from the Midwest.
+- The analysis identifies that the **direct** channel is the most effective for driving sales and gaining new customers, as it generates the highest revenue for the marketing team. The majority of customers are acquired through this channel, and all registered customers have made purchases, indicating a 100% conversion rate. Customer engagement, measured by total purchases, is also highest for the **direct** channel.
 
 
