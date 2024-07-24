@@ -236,14 +236,14 @@ The row labeled 'Total' provides a summary of revenue across all paper type.
 This row shows the combined revenue from all region and the overall total revenue.
 
 - Revenue Distribution <br>
-The smallest revenue among all paper type is the **poster** type with $5,876,005.52. Among all regions, Midwest is the region with the smallest revenue with $3,013,486.51
+The smallest revenue among all paper type is the **poster** type with $5,876,005.52. Among all regions, Midwest is the region with the smallest revenue with $3,013,486.51.
 
 **Total Product Sold :** <br>
 <p align="center">
 <kbd><img width="641" alt="image" src="https://github.com/user-attachments/assets/8bc33a1f-e531-44a4-859c-c974d8e36f95"></kbd>
 </p>
 
-In line with revenue, the largest number of products sold were of the type **standard** in the **Northeast, USA** with amount 646,871 and the smallest number of products sold are of type **poster**  in the **Midwest, USA** with amaount 83,377.
+In line with revenue, the largest number of products sold were of the type **standard** in the **Northeast, USA** with amount 646,871 and the smallest number of products sold are of type **poster**  in the **Midwest, USA** with amount 83,377.
 
 **Total Purchase :** <br>
 <p align="center">
