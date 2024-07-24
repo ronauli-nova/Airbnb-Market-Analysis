@@ -119,7 +119,7 @@ ALTER TABLE sales_reps ADD FOREIGN KEY (region_id) REFERENCES region;
 <br>
 
 # STAGE 2: Data Analysis
-## Sales performance
+## Sales Performance
 To effectively monitor and improve sales performance, businesses rely on several key metrics. Understanding these metrics in business terms provides valuable insights for strategic decision-making and overall growth.
 <details>
   <summary>Query to Count Rows in Accounts Table</summary>
@@ -527,12 +527,15 @@ This determines how many new customers each channel brings in. The table shows t
 Conversion Rate is the percentage of visitors or leads that take a desired action, such as making a purchase, signing up for a newsletter, or filling out a contact form. The table shows percentage of customers that make order in the company based on channel. This indicates that all registered customers have placed an order.
 
 **Customer Engagement :**
-  Customer Engagement measures the level of interaction and involvement customers have with a brand through various channels. It includes metrics like time spent on the website, click-through rates, social media interactions, and repeat visits.
 <p align="center">
 <kbd><img width="297" alt="image" src="https://github.com/user-attachments/assets/a0666f30-571a-46fd-bec5-22e376ff7c0d"></kbd>
 </p>
 
-
+Customer Engagement measures the level of interaction and involvement customers have with a brand through various channels. It includes metrics like time spent on the website, click-through rates, social media interactions, and repeat visits. Due to data limitations in this case, the level of interaction calculated is only based on the total purchase. It shows **direct** channel gain most customer engagement among all channels.
 
 
 # STAGE 3: Summary and Recommendations
+
+
+
+
